@@ -1,1 +1,4 @@
 /.idea/
+/venv/
+/src/buttonBot/config.ini
+/chartBot.iml

@@ -1,0 +1,1 @@
+chart boot with some menu and embedded GPT-3.5-turbo
