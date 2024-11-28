@@ -1,6 +1,6 @@
 # data.py
 
-image_urls = [
+certificates_image_urls = [
     "https://taplink.st/p/e/7/f/f/60070519.jpg",
     "https://taplink.st/p/7/d/3/c/60070522.jpg",
     "https://taplink.st/p/9/5/f/7/60070523.jpg",
@@ -8,6 +8,12 @@ image_urls = [
     "https://taplink.st/p/1/6/a/f/63315579.jpg",
     "https://taplink.st/p/3/6/9/5/63315615.jpg",
     "https://taplink.st/p/2/a/7/f/63315678.jpg"
+]
+
+bonus_links = [
+    {"name": "📂 Способы поддержания энергии", "link": "https://drive.google.com/file/d/10FzzyZLsU9M6u0CpX2oeefE52Xewi7MH/view"},
+    {"name": "📂 Правильный Выбор", "link": "https://drive.google.com/file/d/1-bjofIU661BQY4s3MkClEHOF5QiQjr0v/view"},
+    #{"name": "📂 File 3", "link": "https://drive.google.com/file/d/1example3"},
 ]
 
 # data content

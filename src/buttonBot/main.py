@@ -27,14 +27,15 @@ chunk_overlap = int(config["DEFAULT"]["chunk_overlap"])
 bot_key=config["DEFAULT"]["bot_key"]
 bot = telebot.TeleBot(bot_key)
 
-backButton = types.KeyboardButton('Главное меню')
-bookButton = types.KeyboardButton('📝 Записаться')
+btn_main_menu = types.KeyboardButton('Главное меню')
+btn_book = types.KeyboardButton('📝 Записаться')
+btn_presents = types.KeyboardButton("🎁 Бонусы")
 
-btn1 = types.KeyboardButton("👩‍💼 Обо мне")
-btn2 = types.KeyboardButton("📦 Мои продукты")
-btn3 = types.KeyboardButton("📜 Мои сертификаты")
-btn4 = types.KeyboardButton("💬 Отзывы")
-btn5 = types.KeyboardButton("📞 Контакт")
+btn_about_me = types.KeyboardButton("👩‍💼 Обо мне")
+btn_my_services = types.KeyboardButton("📦 Мои продукты")
+btn_certificates = types.KeyboardButton("📜 Мои сертификаты")
+btn_feedbacks = types.KeyboardButton("💬 Отзывы")
+btn_contacts = types.KeyboardButton("📞 Контакт")
 
 btn11 = types.KeyboardButton('🆓 Бесплатная диагностическая консультация')
 btn21 = types.KeyboardButton('⚙️Разовая коуч-сессия')
@@ -47,7 +48,7 @@ btn61 = types.KeyboardButton('🎲 Игра Лила')
 def start(message):
     # Стартовое меню
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(btn1, btn2, btn3, btn5)
+    markup.add(btn_about_me, btn_my_services, btn_certificates, btn_contacts)
     send_message = f'<b>Привет {message.from_user.first_name} </b> {data.initial_question}\n\n Выберите раздел, который Вас интересует:'
     bot.send_message(message.chat.id, send_message, parse_mode='html', reply_markup=markup)
 
@@ -59,7 +60,7 @@ def get_text_messages(message):
     # Стартовое меню для RU
     if message.text.endswith('Обо мне'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width = 3)
-        markup.add(backButton)
+        markup.add(btn_main_menu)
         bot.send_message(message.from_user.id, "👋 Привет!", reply_markup=markup, parse_mode='Markdown')
         bot.send_message(message.from_user.id, data.data['About Me'], reply_markup=markup, parse_mode='Markdown')
         bot.send_message(message.from_user.id, data.data['My_goals'], reply_markup=markup, parse_mode='Markdown')
@@ -72,54 +73,54 @@ def get_text_messages(message):
         markup.add(btn41)
         markup.add(btn51)
         markup.add(btn61)
-        markup.add(backButton)
+        markup.add(btn_main_menu)
         bot.send_message(message.from_user.id, data.data['Menu_services'], reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Бесплатная диагностическая консультация'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['free_diag'], reply_markup=markup,parse_mode='Markdown')
 
     elif message.text.endswith('Разовая коуч-сессия'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['single_coach'], reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Стратегическая сессия'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['strateg_session'], reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Пакеты Коуч-сессий'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['coach_pack'], reply_markup=markup,parse_mode='Markdown')
 
     elif message.text.endswith('Коуч-сессия с МАК-картами'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['mac_cart'], reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Игра Лила'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(bookButton, btn2, backButton)
+        markup.add(btn_book, btn_my_services, btn_main_menu)
         bot.send_message(message.from_user.id, data.data['lila'], reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Главное меню') or message.text == "" or not message.text.strip():
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(btn1, btn2, btn3, btn5)
+        markup.add(btn_about_me, btn_my_services, btn_certificates, btn_presents, btn_contacts)
         bot.send_message(message.from_user.id, 'Вы вернулись в главное меню.', reply_markup=markup, parse_mode='Markdown')
 
 
     elif message.text.endswith('Отзывы'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(btn1, btn2, btn3, btn4, btn5)
+        markup.add(btn_about_me, btn_my_services, btn_certificates, btn_feedbacks, btn_presents, btn_contacts)
         bot.send_message(message.from_user.id, "Ok", reply_markup=markup, parse_mode='Markdown')
 
     elif message.text.endswith('Мои сертификаты'):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(backButton)
-        for url in data.image_urls:
+        markup.add(btn_main_menu)
+        for url in data.certificates_image_urls:
             bot.send_photo(message.chat.id, url, caption="Еще сертификат )", reply_markup=markup, parse_mode='Markdown')
 
 
@@ -138,9 +139,21 @@ def get_text_messages(message):
             "📩 Выберите вариант, чтобы связаться со мной:",
             reply_markup=markup
         )
+    elif message.text.endswith('🎁 Бонусы'):
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(btn_main_menu)
+        # Add Google Drive links here
+
+        for present in data.bonus_links:
+            bot.send_message(
+                message.from_user.id,
+                f"{present['name']}\n[Скачать файл]({present['link']})",
+                reply_markup=markup,
+                parse_mode="Markdown",
+        )
     else:
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(btn1, btn2, btn3, btn5)
+        markup.add(btn_about_me, btn_my_services, btn_certificates, btn_contacts)
         answer = gpt.ask_chart_gpt(message.text)
         bot.send_message(message.from_user.id, answer, reply_markup=markup, parse_mode='Markdown')
 
@@ -148,7 +161,7 @@ def get_text_messages(message):
 def handle_back_to_main_menu(call):
     # Back to the main menu
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(btn1, btn2, btn3, btn5)
+    markup.add(btn_about_me, btn_my_services, btn_certificates, btn_contacts)
     bot.send_message(call.message.chat.id, "Вы вернулись в главное меню.", reply_markup=markup)
 
 
