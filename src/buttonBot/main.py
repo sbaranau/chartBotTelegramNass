@@ -19,7 +19,9 @@ config.read("config.ini")
 
 # Access values
 api_key = config["DEFAULT"]["api_key"]
-gpt = GPT(api_key)
+data_file_path = config["DEFAULT"]["data_file_path"]
+
+gpt = GPT(api_key, data_file_path)
 
 chunk_size = int(config["DEFAULT"]["chunk_size"])
 chunk_overlap = int(config["DEFAULT"]["chunk_overlap"])

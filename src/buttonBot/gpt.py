@@ -7,11 +7,8 @@ import numpy as np
 import hashlib
 import pickle
 
-file_path = "structured_document.txt"  # Specify your file path
-
-
 class GPT:
-    def __init__(self, openai_key):
+    def __init__(self, openai_key, data_file_path):
         openai.api_key = openai_key
         os.environ["OPENAI_API_KEY"] = openai_key
         self.history_chat = []
@@ -19,6 +16,7 @@ class GPT:
         self.texts = None
         self.cache_file = "faiss_index.pkl"
         self.file_hash = None
+        self.data_file_path = data_file_path
 
     @staticmethod
     def split_text_into_chunks(text: str, chunk_size: int, chunk_overlap: int):
@@ -108,10 +106,10 @@ class GPT:
         return answer + "\n\n" + follow_up_question
 
     @staticmethod
-    def calculate_file_hash():
+    def calculate_file_hash(data_file_path):
         """Calculate the hash of a file for change detection."""
         hasher = hashlib.sha256()
-        with open(file_path, "rb") as f:
+        with open(data_file_path, "rb") as f:
             while chunk := f.read(8192):
                 hasher.update(chunk)
         return hasher.hexdigest()
@@ -123,7 +121,7 @@ class GPT:
             with open(self.cache_file, "rb") as cache:
                 cached_data = pickle.load(cache)
                 # Validate the file hash
-                current_hash = self.calculate_file_hash()
+                current_hash = self.calculate_file_hash(self.data_file_path)
                 if cached_data["file_hash"] == current_hash:
                     logging.info("Loading FAISS index from cache...")
                     self.index = cached_data["index"]
@@ -132,7 +130,7 @@ class GPT:
 
         # Parse the file and create a new FAISS index
         logging.info("Reading and processing file...")
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(self.data_file_path, "r", encoding="utf-8") as file:
             text = file.read()
 
         # Split text into chunks
@@ -157,7 +155,7 @@ class GPT:
         # Save the index and data to cache
         logging.info("Saving FAISS index to cache...")
         cache_data = {
-            "file_hash": self.calculate_file_hash(),
+            "file_hash": self.calculate_file_hash(self.data_file_path),
             "index": self.index,
             "texts": self.texts
         }
