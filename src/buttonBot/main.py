@@ -229,7 +229,7 @@ def daemonize():
 def start_bot():
     """Start the bot."""
     logging.info("Start initializing GPT chart and parsing file with data...")
-    gpt.init_bot(chunk_size=1024, chunk_overlap=100)
+    gpt.init_bot(chunk_size, chunk_overlap)
     logging.info("BOT started")
     bot.polling(none_stop=True)
 

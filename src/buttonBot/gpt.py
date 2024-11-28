@@ -4,6 +4,8 @@ import openai
 import data
 import faiss
 import numpy as np
+import hashlib
+import pickle
 
 file_path = "structured_document.txt"  # Specify your file path
 
@@ -15,6 +17,8 @@ class GPT:
         self.history_chat = []
         self.index = None
         self.texts = None
+        self.cache_file = "faiss_index.pkl"
+        self.file_hash = None
 
     @staticmethod
     def split_text_into_chunks(text: str, chunk_size: int, chunk_overlap: int):
@@ -29,12 +33,15 @@ class GPT:
 
     @staticmethod
     def search_faiss_index(query, index, texts, top_k=3):
-        response = openai.embeddings.create(
-            input=query,
-            model="text-embedding-ada-002"
-        )
-        query_embedding = np.array(response.data[0].embedding, dtype=np.float32)
-        distances, indices = index.search(np.array([query_embedding]), top_k)
+        """Search the FAISS index for the most relevant chunks."""
+        query_embedding = np.array(
+            openai.embeddings.create(
+                input=query,
+                model="text-embedding-ada-002"
+            ).data[0].embedding,
+            dtype=np.float32
+        ).reshape(1, -1)
+        distances, indices = index.search(query_embedding, top_k)
         return [texts[idx] for idx in indices[0] if idx < len(texts)]
 
     @staticmethod
@@ -65,24 +72,7 @@ class GPT:
     def init_bot(self, chunk_size=1024, chunk_overlap=100):
         logging.info("Разделение текста на чанки...")
 
-        with open(file_path, "r", encoding="utf-8") as file:
-            text = file.read()
-
-        self.texts = self.split_text_into_chunks(text, chunk_size, chunk_overlap)
-
-        logging.debug("Создание FAISS индекса с OpenAI embeddings...")
-        embeddings = []
-        for chunk in self.texts:
-            response = openai.embeddings.create(
-                input=chunk,
-                model="text-embedding-ada-002"
-            )
-            embedding = response.data[0].embedding
-            embeddings.append(embedding)
-
-        embeddings = np.array(embeddings, dtype=np.float32)
-        self.index = faiss.IndexFlatL2(embeddings.shape[1])
-        self.index.add(embeddings)
+        self.load_or_create_index(chunk_size, chunk_overlap)
 
         logging.debug(f"Индекс создан. Количество чанков: {len(self.texts)}")
         logging.debug(f"БОТ: {data.initial_question}")
@@ -116,3 +106,60 @@ class GPT:
         self.history_chat.append(f"БОТ: {follow_up_question}")
 
         return answer + "\n\n" + follow_up_question
+
+    @staticmethod
+    def calculate_file_hash():
+        """Calculate the hash of a file for change detection."""
+        hasher = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    def load_or_create_index(self, chunk_size, chunk_overlap):
+        """Load FAISS index from cache or create a new one if necessary."""
+        # Check if the cache file exists
+        if os.path.exists(self.cache_file):
+            with open(self.cache_file, "rb") as cache:
+                cached_data = pickle.load(cache)
+                # Validate the file hash
+                current_hash = self.calculate_file_hash()
+                if cached_data["file_hash"] == current_hash:
+                    logging.info("Loading FAISS index from cache...")
+                    self.index = cached_data["index"]
+                    self.texts = cached_data["texts"]
+                    return
+
+        # Parse the file and create a new FAISS index
+        logging.info("Reading and processing file...")
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
+
+        # Split text into chunks
+        self.texts = self.split_text_into_chunks(text, chunk_size, chunk_overlap)
+
+        # Create embeddings and FAISS index
+        logging.info("Generating embeddings and creating FAISS index...")
+        embeddings = []
+        for chunk in self.texts:
+            response = openai.embeddings.create(
+                input=chunk,
+                model="text-embedding-ada-002"
+            )
+            embedding = response.data[0].embedding
+            embeddings.append(embedding)
+
+        # Convert to NumPy and create FAISS index
+        embeddings = np.array(embeddings, dtype=np.float32)
+        self.index = faiss.IndexFlatL2(embeddings.shape[1])
+        self.index.add(embeddings)
+
+        # Save the index and data to cache
+        logging.info("Saving FAISS index to cache...")
+        cache_data = {
+            "file_hash": self.calculate_file_hash(),
+            "index": self.index,
+            "texts": self.texts
+        }
+        with open(self.cache_file, "wb") as cache:
+            pickle.dump(cache_data, cache)
