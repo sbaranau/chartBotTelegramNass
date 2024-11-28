@@ -5,6 +5,9 @@ from telebot import types
 import data  # Import the menu structure
 from gpt import GPT
 import configparser
+import os
+import sys
+import argparse
 
 logging.basicConfig(level=logging.INFO)
 
@@ -152,8 +155,91 @@ def handle_back_to_main_menu(call):
 # Отправка final_message
 #bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
 
-if __name__ == "__main__":
-    logging.info("Start init gpt chart and parse file with data")
-    gpt.init_bot(chunk_size, chunk_overlap)
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),  # Logs to console
+    ]
+)
+
+def setup_file_logging():
+    """Configure logging to write to a file."""
+    log_file = "bot.log"
+    file_handler = logging.FileHandler(log_file, mode="a")
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
+
+
+def daemonize():
+    """Daemonize the process safely."""
+    if os.name != "posix":
+        raise NotImplementedError("Daemonization only works on POSIX systems.")
+
+    # Fork once to detach from the controlling terminal
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)  # Parent process exits
+    except OSError as e:
+        sys.stderr.write(f"Fork failed: {e}\n")
+        sys.exit(1)
+
+    # Detach process
+    os.setsid()
+
+    # Fork a second time to prevent the daemon from re-acquiring a terminal
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as e:
+        sys.stderr.write(f"Second fork failed: {e}\n")
+        sys.exit(1)
+
+    # Redirect standard file descriptors to /dev/null
+    sys.stdout.flush()
+    sys.stderr.flush()
+    with open("/dev/null", "rb") as dev_null_in:
+        os.dup2(dev_null_in.fileno(), sys.stdin.fileno())
+    with open("/dev/null", "wb") as dev_null_out:
+        os.dup2(dev_null_out.fileno(), sys.stdout.fileno())
+        os.dup2(dev_null_out.fileno(), sys.stderr.fileno())
+
+    # Set up file logging after daemonizing
+    setup_file_logging()
+
+
+def start_bot():
+    """Start the bot."""
+    logging.info("Start initializing GPT chart and parsing file with data...")
+    gpt.init_bot(chunk_size=1024, chunk_overlap=100)
     logging.info("BOT started")
     bot.polling(none_stop=True)
+
+
+def main():
+    # Argument parser
+    parser = argparse.ArgumentParser(description="Start the bot.")
+    parser.add_argument(
+        "--mode",
+        choices=["regular", "daemon"],
+        default="regular",
+        help="Run the bot in 'regular' mode or as a 'daemon'."
+    )
+    args = parser.parse_args()
+
+    if args.mode == "daemon":
+        logging.info("Running the bot in daemon mode...")
+        daemonize()
+        start_bot()
+    else:
+        logging.info("Running the bot in regular mode...")
+        start_bot()
+
+
+if __name__ == "__main__":
+    main()
